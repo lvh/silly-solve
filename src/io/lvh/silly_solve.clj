@@ -106,7 +106,7 @@
           new-eqns (->> new-consts
                         (propagate-consts eqns)
                         (simplify)
-                        (keep identity))
+                        (remove nil?))
           solved? (empty? new-eqns)
           stuck? (and (= consts new-consts)
                       (= eqns new-eqns))]
