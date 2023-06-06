@@ -5,6 +5,8 @@
    [clojure.math.numeric-tower :refer [expt]])
   (:gen-class))
 
+(def variable? (some-fn symbol? keyword?))
+
 (def ^:private ops
   [{::symbol '+ ::fn + ::commutative true}
    {::symbol '* ::fn * ::commutative true}
@@ -73,10 +75,10 @@
 (defn ^:private find-consts
   [eqns]
   (->>
-   (m/search eqns
-     (m/scan (= (m/pred symbol? ?sym)
-                (m/number ?val)))
-     [?sym ?val])
+   (m/search
+    eqns
+    (m/scan (= (m/pred variable? ?var) (m/number ?val)))
+    [?var ?val])
    (into {})))
 
 (defn ^:private propagate-consts
@@ -96,7 +98,6 @@
          (r/bottom-up)
          (r/until =))]
     (strategy eqns)))
-
 
 (defn solve-for-consts
   [eqns]

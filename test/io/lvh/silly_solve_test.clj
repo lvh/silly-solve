@@ -24,7 +24,11 @@
 
     '[(= x 1)
       (= x (/ y 2))]
-    '{x 1}))
+    '{x 1}
+
+
+    '[(= :x 1)]
+    '{:x 1}))
 
 (t/deftest propagate-consts-tests
   (t/are [eqns consts res] (= res (#'ss/propagate-consts eqns consts))
@@ -99,3 +103,19 @@
       '(- 1 1 1 x 1)
       '(- 1 1 x 1 1))
     (t/is (= '(+ -4 x) (traced-simplify '(- x 1 1 1 1))))))
+
+(def syms-kws
+  (-> (r/rewrite
+       )))
+
+(t/deftest keywords-work-too-tests
+  (let [sym-system '[(= x 3)
+                     (= y (* 2 x))
+                     (= z (+ x y))]
+        kw-system '[(= :x 3)
+                    (= :y (* 2 :x))
+                    (= :z (+ :x :y))]
+        get-consts (fn [system]
+                     (let [[_ consts] (ss/solve-for-consts system)]
+                       (update-keys consts name)))]
+    (t/is (= (get-consts sym-system) (get-consts kw-system) {"x" 3 "y" 6 "z" 9}))))
