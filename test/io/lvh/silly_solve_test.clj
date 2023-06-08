@@ -75,6 +75,11 @@
       '(- 1) -1
       '(* 1) 1))
 
+  (t/testing "trivial unary reductions, but with variables"
+    (t/are [eqn res] (= res (traced-simplify eqn))
+      '(+ :x) :x
+      '(* :x) :x))
+
   (t/testing "neutral elements"
     (t/are [eqn res] (= res (traced-simplify eqn))
       '(+ 0 x) 'x

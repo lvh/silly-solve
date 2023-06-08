@@ -49,6 +49,11 @@
 (def simplify
   (->>
    (r/rewrite
+    ;; Resolve unary ops. These don't happen in human-written equations but they
+    ;; happen all the time in generated ones.
+    (* ?x) ?x
+    (+ ?x) ?x
+
     ;; Maybe these neutral elements should be properties of the ops (maybe even
     ;; automatically generated since generally `(op)` will return the neutral
     ;; element!) but honestly just writing these as rewrite rules is so trivial
