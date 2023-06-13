@@ -85,6 +85,22 @@
       '(+ 0 x) 'x
       '(* 1 x) 'x))
 
+  (t/testing "neutral elements in sums with >2 elements"
+    (t/are [eqn res] (= res (traced-simplify eqn))
+      '(+ 0 0 0 x) 'x
+      '(+ x 0 0 0) 'x
+      '(+ 0 x 0 0) 'x
+
+      '(+ 0 x y) '(+ x y)))
+
+  (t/testing "neutral elements in products with >2 elements"
+    (t/are [eqn res] (= res (traced-simplify eqn))
+      '(* 1 1 1 x) 'x
+      '(* x 1 1 1) 'x
+      '(* 1 x 1 1) 'x
+
+      '(* 1 x y) '(* x y)))
+
   (t/testing "addition with constants"
     (t/are [eqn res] (= res (traced-simplify eqn))
       '(+ 1 1) 2
