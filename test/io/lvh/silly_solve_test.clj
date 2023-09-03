@@ -143,3 +143,18 @@
       (get-consts sym-system)
       (get-consts kw-system)
       {"x" 3 "y" 6 "z" 9}))))
+
+(t/deftest min-max-tests
+  (t/is
+   (= [[] {'x 5 'y 1}]
+      (ss/solve-for-consts
+       ['(= x (max 1 2 3 4 5))
+        '(= y (min 1 2 3 4 5))])))
+
+  (t/is
+   (= [[] {'x 5 'y 1 'p 5 'q 1}]
+      (ss/solve-for-consts
+       ['(= x (max 1 2 3 4 5))
+        '(= y (min 1 2 3 4 5))
+        '(= p (max x y 1 2 3))
+        '(= q (min x y 4 5 6))]))))

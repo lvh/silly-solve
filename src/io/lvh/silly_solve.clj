@@ -12,7 +12,9 @@
    {::symbol '* ::fn * ::commutative true}
    {::symbol '- ::fn - ::invertible-with '+}
    {::symbol '/ ::fn / ::invertible-with '*}
-   {::symbol '** ::fn expt}])
+   {::symbol '** ::fn expt}
+   {::symbol 'max ::fn max ::commutative true}
+   {::symbol 'min ::fn min ::commutative true}])
 
 (def ^:private op-sym?
   (into #{} (map ::symbol) ops))
@@ -53,6 +55,8 @@
     ;; happen all the time in generated ones.
     (+ ?x) ?x
     (* ?x) ?x
+    ('max ?x) ?x
+    ('min ?x) ?x
 
     ;; Maybe these neutral elements should be properties of the ops (maybe even
     ;; automatically generated since generally `(op)` will return the neutral
