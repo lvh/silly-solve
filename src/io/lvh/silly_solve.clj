@@ -109,17 +109,19 @@
     (strategy eqns)))
 
 (defn solve-for-consts
-  [eqns]
-  (loop [eqns eqns
-         consts {}]
-    (let [new-consts (->> eqns (find-consts) (merge consts))
-          new-eqns (->> new-consts
-                        (propagate-consts eqns)
-                        (simplify)
-                        (remove nil?))
-          solved? (empty? new-eqns)
-          stuck? (and (= consts new-consts)
-                      (= eqns new-eqns))]
-      (if (or solved? stuck?)
-        [new-eqns new-consts]
-        (recur new-eqns new-consts)))))
+  ([eqns]
+   (solve-for-consts eqns {}))
+  ([eqns consts]
+   (loop [eqns eqns
+          consts consts]
+     (let [new-consts (->> eqns (find-consts) (merge consts))
+           new-eqns (->> new-consts
+                         (propagate-consts eqns)
+                         (simplify)
+                         (remove nil?))
+           solved? (empty? new-eqns)
+           stuck? (and (= consts new-consts)
+                       (= eqns new-eqns))]
+       (if (or solved? stuck?)
+         [new-eqns new-consts]
+         (recur new-eqns new-consts))))))
