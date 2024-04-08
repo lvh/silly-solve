@@ -3,20 +3,10 @@
         meander/epsilon {:mvn/version "0.0.650"}
         org.clojure/math.numeric-tower {:mvn/version "0.0.5"}}
  :aliases
- {:run-m {:main-opts ["-m" "io.lvh.silly-solve"]}
-  :run-x {:ns-default io.lvh.silly-solve
-          :exec-fn greet
-          :exec-args {:name "Clojure"}}
-  :test {:extra-paths ["test"]
-         :extra-deps {org.clojure/test.check {:mvn/version "1.1.0"}}}
+ {:test {:extra-paths ["test"]
+         :extra-deps {org.clojure/test.check {:mvn/version "1.1.1"}}}
   :runner
   {:extra-deps {io.github.cognitect-labs/test-runner
                 {:git/url "https://github.com/cognitect-labs/test-runner"
-                 :sha "2d69f33d7980c3353b246c28f72ffeafbd9f2fab"}}
-   :exec-fn cognitect.test-runner.api/test}
-  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.216"}}
-            :exec-fn hf.depstar/uberjar
-            :exec-args {:aot true
-                        :jar "silly-solve.jar"
-                        :main-class "io.lvh.silly-solve"
-                        :sync-pom true}}}}
+                 :sha "7284cda41fb9edc0f3bc6b6185cfb7138fc8a023"}}
+   :exec-fn cognitect.test-runner.api/test}}}
