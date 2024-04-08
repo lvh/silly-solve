@@ -1,7 +1,12 @@
 {:paths ["src" "resources"]
- :deps {org.clojure/clojure {:mvn/version "1.11.1"}
+ :deps {org.clojure/clojure {:mvn/version "1.11.2"}
+
+        ;; ClojureScript dep is only a workaround for https://github.com/noprompt/meander/pull/245
+        org.clojure/clojurescript {:mvn/version "1.11.132"}
+        io.github.noprompt/meander {:git/sha "74de6b1f651441092cc12d1c9012ef7086033040"}
+
         meander/epsilon {:mvn/version "0.0.650"}
-        org.clojure/math.numeric-tower {:mvn/version "0.0.5"}}
+        org.clojure/math.numeric-tower {:mvn/version "0.1.0"}}
  :aliases
  {:test {:extra-paths ["test"]
          :extra-deps {org.clojure/test.check {:mvn/version "1.1.1"}}}
