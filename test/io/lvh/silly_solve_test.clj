@@ -10,26 +10,37 @@
   (t/is (= '(* 1 (/ 2) (/ 3) (/ 4) (/ 5))
            (#'ss/invert '/ [1 2 3 4 5]))))
 
-(t/deftest find-const-tests
+(t/deftest find-consts-tests
+  ;; Note: all the tests assume the const comes first in the equation, because
+  ;; it's not find-consts' job to simplify.
   (t/are [eqns res] (= res (#'ss/find-consts eqns))
-    [] {}
+    []
+    {}
 
     '[(= x (/ y 2))]
     {}
 
-    '[(= x 1)]
+    '[(= 1 x)]
     '{x 1}
 
-    '[(= x 1) (= y 2)]
+    '[(= 1 x) (= 2 y)]
     '{x 1 y 2}
 
-    '[(= x 1)
+    '[(= 1 x)
       (= x (/ y 2))]
     '{x 1}
 
+    '[(= 1 :x)]
+    '{:x 1}
 
-    '[(= :x 1)]
-    '{:x 1}))
+    '[(= 1 :x)]
+    '{:x 1}
+
+    '[(= 1 :x :y)]
+    '{:x 1 :y 1}
+
+    '[(= 1 :x :y (+ :some :complex :equation))]
+    '{:x 1 :y 1}))
 
 (t/deftest propagate-consts-tests
   (t/are [eqns consts res] (= res (#'ss/propagate-consts eqns consts))
@@ -37,10 +48,12 @@
     '{}
     '[]
 
-    '[(= x 1) (= y 2)]
+    '[(= 1 x) (= y 2)]
     '{}
-    '[(= x 1) (= y 2)]
+    '[(= 1 x) (= y 2)]
 
+    ;; Note: we expect consts to appear in the front but that's not
+    ;; propagate-consts' job
     '[(= x y)]
     '{y 1}
     '[(= x 1)]
@@ -159,3 +172,33 @@
         '(= y (min 1 2 3 4 5))
         '(= p (max x y 1 2 3))
         '(= q (min x y 4 5 6))]))))
+
+(t/deftest equality-const-to-front
+  (t/are [in out] (= out (#'ss/equality-const-to-front in))
+    [10 :a]
+    '(= 10 :a)
+
+    [:a 10]
+    '(= 10 :a)
+
+    [10 :a 10 :b]
+    '(= 10 :a :b)
+
+    [:a 10 :b 10 :c]
+    '(= 10 :a :b :c)
+
+    [:a :b 10 10 :c]
+    '(= 10 :a :b :c))
+
+  (t/is
+   (=
+    (ss/solve-for-consts '[(= :b 10)])
+    (ss/solve-for-consts '[(= 10 :b)])
+    [[] {:b 10}])))
+
+(t/deftest deal-with-multi-valued-equality-tests
+  (t/are [in-exprs] (= [[] {:a 10 :b 10 :c 10}] (ss/solve-for-consts in-exprs))
+    '[(= :a :b :c 10)]
+    '[(= :a 10 :b :c)]
+    '[(=  10 :a :b :c)]
+    '[(= :a 10) (= :a :b :c)]))
