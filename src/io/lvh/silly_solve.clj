@@ -92,12 +92,6 @@
 
 (defn ^:private propagate-consts
   [eqns consts]
-  (m/find eqns
-    (m/$ ?ctx (m/pred consts ?const))
-    (?ctx (consts ?const))))
-
-(defn ^:private propagate-consts
-  [eqns consts]
   (let [strategy
         (->>
          (r/rewrite
