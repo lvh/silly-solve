@@ -1,7 +1,8 @@
 (ns io.lvh.silly-solve-test
-  (:require [clojure.test :as t]
-            [io.lvh.silly-solve :as ss]
-            [meander.strategy.epsilon :as r]))
+  (:require
+   [clojure.test :as t]
+   [io.lvh.silly-solve :as ss]
+   [meander.strategy.epsilon :as r]))
 
 (t/deftest invert-tests
   (t/is (= '(+ 1 (- 2) (- 3) (- 4) (- 5))
