@@ -136,10 +136,12 @@
       '(- 10 1 2 3) 4))
 
   (t/testing "subtraction with constants and variables"
-    (t/are [eqn] (= '(+ -2 x) (traced-simplify eqn))
+    ;; (- 1 1 1 1 x) = 1-1-1-1-x = -2-x = (+ -2 (- x))
+    (t/are [eqn] (= '(+ -2 (- x)) (traced-simplify eqn))
       '(- 1 1 1 1 x)
       '(- 1 1 1 x 1)
       '(- 1 1 x 1 1))
+    ;; (- x 1 1 1 1) = x-1-1-1-1 = x-4 = (+ -4 x)
     (t/is (= '(+ -4 x) (traced-simplify '(- x 1 1 1 1))))))
 
 (t/deftest keywords-work-too-tests

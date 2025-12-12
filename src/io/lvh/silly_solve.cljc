@@ -50,9 +50,11 @@
 
 (defn ^:private invert
   [op-sym [x & ys]]
-  (let [inverted (invertible-ops op-sym)]
-    (->> (map (fn [y] (list op-sym y)) ys)
-         (apply list inverted x))))
+  (if (empty? ys)
+    (list op-sym x)  ; Return unary op unchanged, e.g. (- x) stays (- x)
+    (let [inverted (invertible-ops op-sym)]
+      (->> (map (fn [y] (list op-sym y)) ys)
+           (apply list inverted x)))))
 
 (defn ^:private apply-op
   [op-sym args]
