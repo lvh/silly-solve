@@ -202,3 +202,25 @@
     '[(= :a 10 :b :c)]
     '[(=  10 :a :b :c)]
     '[(= :a 10) (= :a :b :c)]))
+
+(t/deftest nested-multiplication-in-subtraction-bug-test
+  ;; Bug: when a variable that equals 1 is substituted into (* 25 :both),
+  ;; the result is incorrectly computed as 50 instead of 25.
+  ;; This causes :r-both to be 50 instead of 15.
+  (t/testing "multiplication by 1 should not double the value"
+    (t/is (= [[] {:none 0
+                  :one 0
+                  :both 1
+                  :r-example 15
+                  :r-none 25
+                  :r-both 15}]
+             (ss/solve-for-consts
+              '[(= :none (* 0 0))
+                (= :one (* 1 0))
+                (= :both (* 1 1))
+                (= :r-example (max (- 25 (* 25 1)) (/ 30 2)))
+                (= :r-none (max (- 25 (* 25 :none)) (/ 30 2)))
+                (= :r-both (max (- 25 (* 25 :both)) (/ 30 2)))]))))
+
+  (t/testing "simpler reproduction: (* 25 1) should equal 25, not 50"
+    (t/is (= 25 (ss/simplify '(* 25 1))))))
