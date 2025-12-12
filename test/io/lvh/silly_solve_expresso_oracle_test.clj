@@ -1,17 +1,46 @@
 (ns io.lvh.silly-solve-expresso-oracle-test
   (:require
    [clojure.test :as t]
-   [clojure.test.check :as tc]
    [clojure.test.check.generators :as gen]
    [clojure.test.check.properties :as prop]
    [clojure.test.check.clojure-test :refer [defspec]]
    [io.lvh.silly-solve :as ss]
    [numeric.expresso.core :as ex]
-   [numeric.expresso.solve :as solve]))
+   [clojure.walk :as walk]))
 
 ;; =============================================================================
 ;; Expresso Integration Utilities
 ;; =============================================================================
+
+(defn keyword->symbol
+  "Convert a keyword to a symbol. Expresso works better with symbols for multi-variable solving."
+  [k]
+  (if (keyword? k)
+    (symbol (name k))
+    k))
+
+(defn symbol->keyword
+  "Convert a symbol back to a keyword for silly-solve compatibility."
+  [s]
+  (if (symbol? s)
+    (keyword (name s))
+    s))
+
+(defn convert-expr-keywords->symbols
+  "Recursively convert all keywords in an expression to symbols."
+  [expr]
+  (walk/postwalk
+   (fn [x]
+     (if (keyword? x)
+       (keyword->symbol x)
+       x))
+   expr))
+
+(defn convert-result-symbols->keywords
+  "Convert symbol keys in a result map back to keywords."
+  [result-map]
+  (when (map? result-map)
+    (into {} (map (fn [[k v]] [(symbol->keyword k) v]) result-map))))
 
 (defn extract-variables-from-equations
   "Extract all variables from a list of equations."
@@ -27,14 +56,21 @@
          (into #{}))))
 
 (defn try-expresso-solve
-  "Attempt to solve equations with expresso. Returns result or nil if it fails."
+  "Attempt to solve equations with expresso. Returns result or nil if it fails.
+   Converts keywords to symbols since expresso handles symbols better for multi-variable solving."
   [equations]
   (try
-    (let [variables (vec (extract-variables-from-equations equations))]
+    (let [;; Convert keywords to symbols for expresso compatibility
+          symbol-equations (map convert-expr-keywords->symbols equations)
+          variables (vec (extract-variables-from-equations symbol-equations))]
       (when (seq variables)
-        (let [ex-equations (map #(eval `(ex/ex ~%)) equations)
+        ;; Build expresso expressions and solve
+        (let [ex-equations (map #(eval `(ex/ex ~%)) symbol-equations)
               result (apply ex/solve variables ex-equations)]
-          (when (and result (not (contains? result {})))
+          ;; Filter out empty solutions
+          (when (and result
+                     (seq result)
+                     (not (contains? result {})))
             result))))
     (catch Exception e
       nil)))
@@ -43,7 +79,8 @@
   "Convert expresso's result to silly-solve's constant map format.
    Expresso can return:
    - #{3} for single variable solutions
-   - #{{x 3, y 2}} for system solutions"
+   - #{{x 3, y 2}} for system solutions
+   Converts symbol keys back to keywords for silly-solve compatibility."
   [expresso-result variables]
   (when (and expresso-result (seq expresso-result))
     (let [first-result (first expresso-result)]
@@ -51,14 +88,13 @@
         ;; Single number result for single variable equations
         (number? first-result)
         (when (= 1 (count variables))
-          {(first variables) first-result})
+          {(symbol->keyword (first variables)) first-result})
 
-        ;; Map result for system equations
+        ;; Map result for system equations - convert symbol keys to keywords
         (map? first-result)
         (when-not (empty? first-result)
-          first-result)
+          (convert-result-symbols->keywords first-result))
 
-;; Unexpected result format
         :else nil))))
 
 (defn approximately=
@@ -104,37 +140,37 @@
   "Generator for non-zero rationals."
   (gen/such-that (complement zero?) gen-rational))
 
-;; Generators for operations both solvers support
-(def gen-intersection-binary-op
+(def gen-leaf
+  "Generator for expression leaves (constants or variables)."
+  (gen/one-of [gen-rational gen-variable]))
+
+(def gen-binary-op
   "Generator for binary operations both solvers support."
   (gen/elements ['+ '- '* '/]))
 
-(def gen-intersection-commutative-op
+(def gen-commutative-op
   "Generator for commutative operations both solvers support."
   (gen/elements ['+ '* 'max 'min]))
 
-(def gen-leaf
-  "Generator for expression leaves."
-  (gen/one-of [gen-rational gen-variable]))
-
-(defn gen-intersection-expr
-  "Generate expressions using only operations both solvers support."
+(defn gen-expr
+  "Recursive generator for expressions up to given depth.
+   Used for testing oracle agreement on moderately complex expressions."
   [max-depth]
   (if (<= max-depth 0)
     gen-leaf
     (gen/frequency
-     [[3 gen-leaf]
-      [1 (gen/let [op gen-intersection-binary-op
-                   left (gen-intersection-expr (dec max-depth))
-                   right (gen-intersection-expr (dec max-depth))]
+     [[3 gen-leaf]  ; Bias toward leaves to avoid explosion
+      [1 (gen/let [op gen-binary-op
+                   left (gen-expr (dec max-depth))
+                   right (gen-expr (dec max-depth))]
            (list op left right))]
-      [1 (gen/let [op gen-intersection-commutative-op
-                   args (gen/vector (gen-intersection-expr (dec max-depth)) 2 3)]
+      [1 (gen/let [op gen-commutative-op
+                   args (gen/vector (gen-expr (dec max-depth)) 2 3)]
            (cons op args))]])))
 
-(def gen-moderate-complexity-expr
-  "Generator for moderately complex expressions (depth 3-4)."
-  (gen-intersection-expr 3))
+(def gen-moderate-expr
+  "Generator for moderately complex expressions (depth 3)."
+  (gen-expr 3))
 
 (def gen-simple-solvable-system
   "Generator for simple systems both solvers should handle."
@@ -235,6 +271,72 @@
         :variables variables
         :silly-result silly-result
         :expresso-result expresso-result}))))
+
+;; =============================================================================
+;; Moderate Complexity Expression Tests
+;; =============================================================================
+
+(def gen-moderate-equation
+  "Generator for equations with moderately complex RHS expressions."
+  (gen/let [var gen-variable
+            expr gen-moderate-expr]
+    (list '= var expr)))
+
+(defn evaluate-expr
+  "Evaluate an expression with given variable bindings.
+   Returns nil if evaluation fails (e.g., division by zero, unbound vars)."
+  [expr bindings]
+  (try
+    (cond
+      (number? expr) expr
+      (ss/variable? expr) (get bindings expr)
+      (seq? expr)
+      (let [[op & args] expr
+            evaluated-args (map #(evaluate-expr % bindings) args)]
+        (when (every? some? evaluated-args)
+          (case op
+            + (apply + evaluated-args)
+            - (apply - evaluated-args)
+            * (apply * evaluated-args)
+            / (when (every? #(not (zero? %)) (rest evaluated-args))
+                (apply / evaluated-args))
+            max (apply max evaluated-args)
+            min (apply min evaluated-args)
+            nil)))
+      :else nil)
+    (catch Exception _ nil)))
+
+(defspec oracle-agrees-on-moderate-expressions 100
+  (prop/for-all [equation gen-moderate-equation]
+    (let [equations [equation]
+          variables (vec (extract-variables-from-equations equations))
+          silly-result (try (ss/solve-for-consts equations) (catch Exception e nil))
+          expresso-result (try-expresso-solve equations)
+
+          ;; Both solved successfully?
+          both-solved? (and silly-result expresso-result
+                           (empty? (first silly-result)))
+
+          ;; If both solved, compare results
+          pass? (cond
+                  ;; Both solved - verify they agree
+                  both-solved?
+                  (solutions-equivalent? silly-result expresso-result variables)
+
+                  ;; Expresso solved but silly-solve stuck - that's OK (silly-solve is simpler)
+                  (and expresso-result silly-result (seq (first silly-result)))
+                  true
+
+                  ;; Neither solved or only one solved - acceptable for complex expressions
+                  :else true)]
+
+      (oracle-result
+       pass?
+       {:equations equations
+        :variables variables
+        :silly-result silly-result
+        :expresso-result expresso-result
+        :both-solved? both-solved?}))))
 
 ;; =============================================================================
 ;; Coverage Analysis Tests
