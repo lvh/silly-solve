@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(clojure:*)",
-      "Bash(git -C /Users/afoltzm/code/silly-solve status)"
-    ]
-  }
-}
