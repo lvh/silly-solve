@@ -52,7 +52,7 @@
                            [])))
          (mapcat #(tree-seq seq? identity %))
          (filter ss/variable?)
-         (filter #(not (operators %)))
+         (remove operators)
          (into #{}))))
 
 (defn try-expresso-solve
@@ -92,7 +92,7 @@
 
         ;; Map result for system equations - convert symbol keys to keywords
         (map? first-result)
-        (when-not (empty? first-result)
+        (when (seq first-result)
           (convert-result-symbols->keywords first-result))
 
         :else nil))))

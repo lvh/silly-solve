@@ -147,10 +147,10 @@
   "Generate bindings for all variables in an expression."
   [expr]
   (let [vars (extract-variables expr)]
-    (if (empty? vars)
-      (gen/return {})
+    (if (seq vars)
       (gen/fmap #(zipmap vars %)
-                (gen/vector gen-nonzero-rational (count vars))))))
+                (gen/vector gen-nonzero-rational (count vars)))
+      (gen/return {}))))
 
 ;; =============================================================================
 ;; Failure-catching with tracing
@@ -178,6 +178,8 @@
                    (ss/solve-for-consts eqns)))]
     [result (str trace-output)]))
 
+;; NOTE: check-with-trace is intentionally kept for interactive debugging use,
+;; even though it's not called by the automated tests.
 (defn check-with-trace
   "Run a check function. If it fails, re-run with tracing and return diagnostic info.
    check-fn: (fn [] {:pass? bool :data map})
