@@ -172,10 +172,9 @@
   [eqns]
   (let [trace-output (java.io.StringWriter.)
         result (binding [*out* trace-output]
-                 (let [traced-simp (r/trace ss/simplify)]
                    ;; We need to temporarily rebind simplify, but since it's
                    ;; called internally, we'll just trace the whole solve
-                   (ss/solve-for-consts eqns)))]
+                   (with-redefs [ss/simplify (r/trace ss/simplify)] (ss/solve-for-consts eqns)))]
     [result (str trace-output)]))
 
 ;; NOTE: check-with-trace is intentionally kept for interactive debugging use,
@@ -402,7 +401,7 @@
         :remaining remaining
         :expected expected-val
         :actual actual-val}
-       #(simplify-with-trace expr)))))
+       #(second (solve-with-trace [eqn]))))))
 
 ;; Generator for small systems of equations
 (def gen-small-equation-system
@@ -437,7 +436,7 @@
         :result result
         :remaining remaining
         :eqn-results eqn-results}
-       #(str "Equations: " (pr-str eqns))))))
+       #(second (solve-with-trace eqns))))))
 
 ;; =============================================================================
 ;; Per-operation property tests
