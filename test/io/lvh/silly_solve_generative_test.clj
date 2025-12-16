@@ -393,11 +393,13 @@
           actual-val (get consts var)
           pass? (or (nil? result)
                     (nil? expected-val)
-                    (approximately= actual-val expected-val))]
+                    (and (empty? remaining)
+                         (approximately= actual-val expected-val)))]
       (solution-result
        pass?
        {:eqns [eqn]
         :result result
+        :remaining remaining
         :expected expected-val
         :actual actual-val}
        #(simplify-with-trace expr)))))
