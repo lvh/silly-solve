@@ -4,4 +4,7 @@
    ["^\\?.*"   ; meander logic variables (?x, ?sym, etc.)
     "^!.*"    ; meander memory variables (!consts, etc.)
     "^\\.$"   ; meander dot pattern
-    "^&$"]}}} ; meander rest pattern
+    "^&$"]}}  ; meander rest pattern
+
+ :lint-as
+ {clojure.test.check.clojure-test/defspec clojure.test/deftest}}
