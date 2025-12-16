@@ -1,0 +1,7 @@
+{:linters
+ {:unresolved-symbol
+  {:exclude-patterns
+   ["^\\?.*"   ; meander logic variables (?x, ?sym, etc.)
+    "^!.*"    ; meander memory variables (!consts, etc.)
+    "^\\.$"   ; meander dot pattern
+    "^&$"]}}} ; meander rest pattern
