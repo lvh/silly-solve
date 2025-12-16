@@ -76,9 +76,43 @@ The solver works via iterative refinement in `solve-for-consts`:
 - **io.github.noprompt/meander** - Git dependency (workaround for issue #245)
 - **clojure.math.numeric-tower** - For `expt` function
 
+## Development Commands
+
+All commands use [Babashka](https://babashka.org/) (`bb`).
+
+### Testing
+
+```bash
+bb test
+```
+
+Runs the test suite using cognitect test-runner.
+
+### Linting
+
+```bash
+bb lint
+```
+
+Runs clj-kondo to check for code issues.
+
+### Maintenance
+
+```bash
+bb maint
+```
+
+Checks for outdated dependencies using antq.
+
 ## Testing Strategy
 
 ### Running Tests
+
+```bash
+bb test
+```
+
+Or directly via Clojure:
 
 ```bash
 clojure -X:test:runner
@@ -101,7 +135,7 @@ Tests are organized by functionality with comprehensive coverage:
 
 ### Testing Guidelines for LLM Agents
 
-1. **Always run tests after changes**: `clojure -X:test:runner`
+1. **Always run tests after changes**: `bb test`
 2. **Test private functions** using `#'namespace/fn` syntax (see test file)
 3. **Use `t/are`** for table-driven tests with multiple cases
 4. **Use `traced-simplify`** (`r/trace ss/simplify`) for debugging rewrite rules

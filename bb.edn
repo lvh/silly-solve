@@ -1,0 +1,12 @@
+{:tasks
+ {test
+  {:doc "Run tests"
+   :task (clojure "-X:test:runner")}
+
+  lint
+  {:doc "Run clj-kondo linter"
+   :task (shell "clj-kondo --lint src test")}
+
+  maint
+  {:doc "Check for outdated dependencies using antq"
+   :task (shell "clojure -Sdeps '{:deps {com.github.liquidz/antq {:mvn/version \"RELEASE\"}}}' -M -m antq.core")}}}
