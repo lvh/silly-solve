@@ -205,8 +205,6 @@
     (let [variables (vec (extract-variables-from-equations equations))
           silly-result (try (ss/solve-for-consts equations) (catch Exception e nil))
           expresso-result (try-expresso-solve equations)
-          silly-constants (when silly-result (second silly-result))
-          expresso-constants (when expresso-result (expresso-result->silly-solve expresso-result variables))
 
           both-solved? (and silly-result expresso-result
                            (empty? (first silly-result)) ; silly-solve fully solved
