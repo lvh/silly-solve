@@ -1,12 +1,14 @@
 (ns io.lvh.silly-solve
   (:require
-    #?@(:clj
-          [[meander.strategy.epsilon :as r]
-           [meander.epsilon :as m]
-           [clojure.math.numeric-tower :refer [expt]]]
-        :cljs
-        [[meander.strategy.epsilon :as r :include-macros true]
-         [meander.epsilon :as m :include-macros true]]))
+   #?@(:clj
+       [[meander.strategy.epsilon :as r]
+        [meander.epsilon :as m]
+        [clojure.math.numeric-tower :refer [expt]]]
+       :cljs
+       [[meander.strategy.epsilon :as r :include-macros true]
+        [meander.epsilon :as m :include-macros true]])
+   [#?(:clj clojure.math :cljs cljs.math)
+    :refer [floor ceil]])
   #?(:clj (:gen-class)))
 
 (def variable? (some-fn symbol? keyword?))
@@ -18,7 +20,9 @@
    {::symbol '/ ::fn / ::invertible-with '*}
    {::symbol '** ::fn #?(:clj expt :cljs #(.pow js/Math %1 %2))}
    {::symbol 'max ::fn max ::commutative true}
-   {::symbol 'min ::fn min ::commutative true}])
+   {::symbol 'min ::fn min ::commutative true}
+   {::symbol 'floor ::fn floor}
+   {::symbol 'ceil ::fn ceil}])
 
 (def ^:private op-sym?
   (into #{} (map ::symbol) ops))
