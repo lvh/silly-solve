@@ -1,10 +1,10 @@
 (ns io.lvh.silly-solve-expresso-oracle-test
   (:require
-   [clojure.test :as t]
    [clojure.test.check.generators :as gen]
    [clojure.test.check.properties :as prop]
    [clojure.test.check.clojure-test :refer [defspec]]
    [io.lvh.silly-solve :as ss]
+   [io.lvh.silly-solve-test-util :refer [approximately=]]
    [numeric.expresso.core :as ex]
    [clojure.walk :as walk]))
 
@@ -96,13 +96,6 @@
           (convert-result-symbols->keywords first-result))
 
         :else nil))))
-
-(defn approximately=
-  "Check if two numbers are approximately equal (for floating point)."
-  [a b]
-  (or (= a b)
-      (and (number? a) (number? b)
-           (< (Math/abs (- (double a) (double b))) 1e-9))))
 
 (defn solutions-equivalent?
   "Check if two solution maps are equivalent, handling floating point precision."

@@ -1,11 +1,11 @@
 (ns io.lvh.silly-solve-generative-test
   (:require
    [clojure.test :as t]
-   [clojure.test.check :as tc]
    [clojure.test.check.generators :as gen]
    [clojure.test.check.properties :as prop]
    [clojure.test.check.clojure-test :refer [defspec]]
    [io.lvh.silly-solve :as ss]
+   [io.lvh.silly-solve-test-util :refer [approximately=]]
    [meander.strategy.epsilon :as r]))
 
 ;; =============================================================================
@@ -238,13 +238,6 @@
 ;; =============================================================================
 ;; Semantic preservation property
 ;; =============================================================================
-
-(defn approximately=
-  "Check if two numbers are approximately equal (for floating point)."
-  [a b]
-  (or (= a b)
-      (and (number? a) (number? b)
-           (< (Math/abs (- (double a) (double b))) 1e-9))))
 
 ;; Known bug: unary minus is lost during inversion.
 ;; (- 0 :a) simplifies to :a instead of (- :a) or (* -1 :a)
