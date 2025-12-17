@@ -52,6 +52,13 @@
          [?sym ?inv])
        (into {})))
 
+;; Maps commutative ops to their "undoing" op: + -> -, * -> /
+(def ^:private undo-commutative-op
+  (->> (m/search ops
+         (m/scan {::symbol ?inv ::invertible-with ?comm})
+         [?comm ?inv])
+       (into {})))
+
 (defn ^:private invert
   [op-sym [x & ys]]
   (if (empty? ys)
@@ -59,6 +66,14 @@
     (let [inverted (invertible-ops op-sym)]
       (->> (map (fn [y] (list op-sym y)) ys)
            (apply list inverted x)))))
+
+(defn ^:private isolate-variable
+  "Given (= k (op c var)) where op is commutative, isolate the variable.
+   Returns (= (inv-op k c) var) so the solver can extract the constant.
+   Example: (= 10 (* 2 x)) -> (= (/ 10 2) x) -> (= 5 x)"
+  [k op-sym const-part var]
+  (let [inv-op (undo-commutative-op op-sym)]
+    (list '= (list inv-op k const-part) var)))
 
 (defn ^:private apply-op
   [op-sym args]
@@ -98,7 +113,12 @@
 
      ;; Move constants to the front of equations
      (= & (m/pred (fn [args] (->> args rest (some number?))) ?args))
-     (m/app equality-const-to-front ?args))
+     (m/app equality-const-to-front ?args)
+
+     ;; Isolate a single variable: (= k (op c x)) -> (= (inv-op k c) x)
+     ;; This handles cases like (= 10 (* 2 x)) -> (= 5 x)
+     (= (m/number ?k) ((m/pred undo-commutative-op ?op) (m/number ?c) (m/pred variable? ?x)))
+     (m/app isolate-variable ?k ?op ?c ?x))
    (r/attempt)
    (r/bottom-up)
    (r/until =)))

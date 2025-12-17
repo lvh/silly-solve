@@ -205,6 +205,21 @@
     '[(=  10 :a :b :c)]
     '[(= :a 10) (= :a :b :c)]))
 
+(t/deftest isolate-variable-tests
+  ;; Issue #1: Being smarter about equalities - flipping a const to the other side
+  ;; When we have (= 10 (* 2 :c)), we should be able to solve for :c = 5
+  (t/testing "isolate variable in multiplication"
+    (t/is (= [[] {:a 10 :b 2 :c 5}]
+             (ss/solve-for-consts
+              '[(= :a (* :b :c))]
+              {:a 10 :b 2}))))
+
+  (t/testing "isolate variable in addition"
+    (t/is (= [[] {:a 10 :b 3 :c 7}]
+             (ss/solve-for-consts
+              '[(= :a (+ :b :c))]
+              {:a 10 :b 3})))))
+
 (t/deftest nested-multiplication-in-subtraction-bug-test
   ;; Bug: when a variable that equals 1 is substituted into (* 25 :both),
   ;; the result is incorrectly computed as 50 instead of 25.
