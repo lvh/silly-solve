@@ -13,6 +13,10 @@
 
 (def variable? (some-fn symbol? keyword?))
 
+(defn alt
+ "alt: first non-nil value of the passed args"
+ [& args] (first (filter some? args)))
+
 (def ^:private ops
   [{::symbol '+ ::fn + ::commutative true}
    {::symbol '* ::fn * ::commutative true}
@@ -22,7 +26,12 @@
    {::symbol 'max ::fn max ::commutative true}
    {::symbol 'min ::fn min ::commutative true}
    {::symbol 'floor ::fn floor}
-   {::symbol 'ceil ::fn ceil}])
+   {::symbol 'ceil ::fn ceil}
+   ;; TODO: decide whether to use `alt` or `or` as the operator
+   ;; name here. `or` is easier for a non-programmer to understand than
+   ;; `alt`, but is less precise because silly-solve doesn't have full-fledged
+   ;; Boolean logic
+   {::symbol 'or ::fn alt}])
 
 (def ^:private op-sym?
   (into #{} (map ::symbol) ops))
@@ -97,6 +106,8 @@
      (+ 0 ?x) ?x
      (* 1 ?x) ?x
      ('** 1 ?x) ?x ;; unquoted `**` would be interpreted as memory variable `*`
+
+     ('or ?x) ?x
 
      ;; Remove tautologies & meaningless unary equalities
      (= & (m/pred (fn [args] (or (empty? args) (apply = args))) ?args)) nil
