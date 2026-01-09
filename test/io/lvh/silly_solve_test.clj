@@ -242,10 +242,11 @@
   (t/testing "simpler reproduction: (* 25 1) should equal 25, not 50"
     (t/is (= 25 (ss/simplify '(* 25 1))))))
 
+
 (t/deftest alternative
-  (let [solved (ss/solve-for-consts
-                '[(= :result (or nil 1))
-                  (= :result2 (or 2 nil))])]
-    (println solved)
-    (t/is (= [[] {:result 1 :result2 2}]
-             solved))))
+  (let [[eqs vs :as solved]
+        (ss/solve-for-consts
+         '[(= :result (or 0 1))
+           (= :result2 (or 2 0))])]
+    (t/is (= {:result 1 :result2 2}
+             vs))))

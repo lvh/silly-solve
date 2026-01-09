@@ -14,8 +14,8 @@
 (def variable? (some-fn symbol? keyword?))
 
 (defn alt
- "alt: first non-nil value of the passed args"
- [& args] (first (filter some? args)))
+ "alt: first non-zero value of the passed args"
+ [& args] (first (filter #(not (zero? %)) args)))
 
 (def ^:private ops
   [{::symbol '+ ::fn + ::commutative true}
