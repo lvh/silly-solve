@@ -246,7 +246,7 @@
 (t/deftest alternative
   (let [[eqs vs :as solved]
         (ss/solve-for-consts
-         '[(= :result (or 0 1))
-           (= :result2 (or 2 0))])]
+         '[(= :result (alt 0 1))
+           (= :result2 (alt 2 0))])]
     (t/is (= {:result 1 :result2 2}
              vs))))
