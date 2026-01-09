@@ -242,11 +242,19 @@
   (t/testing "simpler reproduction: (* 25 1) should equal 25, not 50"
     (t/is (= 25 (ss/simplify '(* 25 1))))))
 
-
 (t/deftest alternative
   (let [[eqs vs :as solved]
         (ss/solve-for-consts
-         '[(= :result (alt 0 1))
-           (= :result2 (alt 2 0))])]
-    (t/is (= {:result 1 :result2 2}
-             vs))))
+         '[(= :result1 (alt 0 1))
+           (= :result2 (alt 2 0))
+           (= :result3 (+ 1 (alt 2 0)))
+           (= :result4 (* 2 (alt 2 0)))
+           (= :result5 (+ (alt 2 0) (alt 0 0 0 0 0 3)))
+           (= :result6 (alt (* :result2 :result3) 0))
+           (= :result7 (alt (+ :result6 1)  3))])]
+    (t/is (= {:result1 1 :result2 2
+              :result3 3 :result4 4
+              :result5 5 :result6 6
+              :result7 7}
+             vs)
+          "alt operator should allow for finding non-zero values and ordered choice among options")))
