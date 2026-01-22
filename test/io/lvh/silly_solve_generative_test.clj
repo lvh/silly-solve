@@ -573,3 +573,88 @@
       (op-result pass?
                  {:expr expr :simplified simplified :expected a :actual result-val}
                  #(simplify-with-trace expr)))))
+
+;; =============================================================================
+;; Alt operator properties
+;; =============================================================================
+
+(def gen-alt-args
+  "Generator for alt arguments: a mix of zeros and non-zero rationals."
+  (gen/vector (gen/frequency [[1 (gen/return 0)]
+                              [2 gen-nonzero-rational]])
+              1 6))
+
+(def gen-all-zeros
+  "Generator for a vector of zeros."
+  (gen/vector (gen/return 0) 1 6))
+
+(def gen-alt-with-nonzero
+  "Generator for alt arguments guaranteed to have at least one non-zero."
+  (gen/let [before-zeros (gen/vector (gen/return 0) 0 3)
+            nonzero gen-nonzero-rational
+            after (gen/vector (gen/frequency [[1 (gen/return 0)]
+                                              [1 gen-nonzero-rational]])
+                              0 3)]
+    (vec (concat before-zeros [nonzero] after))))
+
+(defspec alt-returns-first-nonzero 500
+  (prop/for-all [args gen-alt-with-nonzero]
+    (let [result (apply ss/alt args)
+          expected (first (remove zero? args))
+          pass? (= result expected)]
+      (op-result pass?
+                 {:args args :result result :expected expected}
+                 (constantly nil)))))
+
+(defspec alt-result-is-member-of-inputs 500
+  (prop/for-all [args gen-alt-args]
+    (let [result (apply ss/alt args)
+          pass? (or (nil? result)
+                    (some #(= result %) args))]
+      (op-result pass?
+                 {:args args :result result}
+                 (constantly nil)))))
+
+(defspec alt-all-zeros-yields-nil 500
+  (prop/for-all [args gen-all-zeros]
+    (let [result (apply ss/alt args)
+          pass? (nil? result)]
+      (op-result pass?
+                 {:args args :result result}
+                 (constantly nil)))))
+
+(defspec alt-unary-nonzero-returns-arg 500
+  (prop/for-all [x gen-nonzero-rational]
+    (let [result (ss/alt x)
+          pass? (= result x)]
+      (op-result pass?
+                 {:arg x :result result}
+                 (constantly nil)))))
+
+(defspec alt-unary-zero-returns-nil 500
+  (prop/for-all [_ (gen/return nil)]
+    (let [result (ss/alt 0)
+          pass? (nil? result)]
+      (op-result pass?
+                 {:result result}
+                 (constantly nil)))))
+
+;; Test that alt simplifies correctly in expressions
+(def gen-alt-expr
+  "Generator for alt expressions with constants."
+  (gen/let [args gen-alt-with-nonzero]
+    (cons 'alt args)))
+
+(defspec alt-simplify-preserves-semantics 500
+  (prop/for-all [args gen-alt-with-nonzero]
+    (let [expr (cons 'alt args)
+          simplified (try-simplify expr)
+          expected (first (remove zero? args))
+          ;; After simplification, result should equal the first non-zero
+          pass? (or (nil? simplified)
+                    (= simplified expected)
+                    (and (number? simplified)
+                         (approximately= simplified expected)))]
+      (op-result pass?
+                 {:expr expr :simplified simplified :expected expected}
+                 #(simplify-with-trace expr)))))

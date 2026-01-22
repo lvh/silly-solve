@@ -13,6 +13,10 @@
 
 (def variable? (some-fn symbol? keyword?))
 
+(defn alt
+ "alt: first non-zero value of the passed args"
+ [& args] (first (remove zero? args)))
+
 (def ^:private ops
   [{::symbol '+ ::fn + ::commutative true}
    {::symbol '* ::fn * ::commutative true}
@@ -22,7 +26,8 @@
    {::symbol 'max ::fn max ::commutative true}
    {::symbol 'min ::fn min ::commutative true}
    {::symbol 'floor ::fn floor}
-   {::symbol 'ceil ::fn ceil}])
+   {::symbol 'ceil ::fn ceil}
+   {::symbol 'alt ::fn alt}])
 
 (def ^:private op-sym?
   (into #{} (map ::symbol) ops))
@@ -97,6 +102,8 @@
      (+ 0 ?x) ?x
      (* 1 ?x) ?x
      ('** 1 ?x) ?x ;; unquoted `**` would be interpreted as memory variable `*`
+
+     ('alt ?x) ?x
 
      ;; Remove tautologies & meaningless unary equalities
      (= & (m/pred (fn [args] (or (empty? args) (apply = args))) ?args)) nil
